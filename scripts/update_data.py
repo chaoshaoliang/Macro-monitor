@@ -146,7 +146,18 @@ def main():
                 
     prev_data = history[0] if len(history) > 0 else None
 
-    print(f"Current Status: {new_data['status']}")
+    # ============================================================
+    # 【新增功能】比對前後狀態，判斷是否發送 Email
+    # 直接使用您程式碼中已經抓好的 prev_data 來比對
+    # ============================================================
+    previous_status = prev_data.get('status', '未知') if prev_data else '未知'
+    current_status = new_data['status']
+    status_changed = (current_status != previous_status)
+
+    print(f"前次狀態: {previous_status}")
+    print(f"當前狀態: {current_status}")
+    print(f"狀態是否改變: {'是' if status_changed else '否'}")
+
     print("Generating AI Analysis...")
     ai_content = generate_ai_analysis(new_data, prev_data)
     
@@ -165,13 +176,21 @@ def main():
     else:
         print("指標無顯著變動，今日不新增歷史紀錄。")
         
-    # 將狀態輸出給 GitHub Action 以利觸發 Email 告警
-    is_alert = "正常" not in new_data["status"]
+    # ============================================================
+    # 【更新輸出邏輯】將比對結果輸出給 GitHub Actions (GITHUB_ENV)
+    # 以利 YAML 中的 if: env.STATUS_CHANGED == 'true' 進行判斷
+    # ============================================================
+    if "GITHUB_ENV" in os.environ:
+        with open(os.environ["GITHUB_ENV"], "a", encoding='utf-8') as f:
+            f.write(f"STATUS_CHANGED={'true' if status_changed else 'false'}\n")
+            f.write(f"NEW_STATUS={current_status}\n")
+            
+    # 備用保留：您原本的 GITHUB_OUTPUT，避免破壞其他相依流程
     github_output = os.getenv('GITHUB_OUTPUT')
     if github_output:
         with open(github_output, 'a', encoding='utf-8') as f:
-            f.write(f"is_alert={str(is_alert).lower()}\n")
-            f.write(f"status={new_data['status']}\n")
+            f.write(f"status_changed={'true' if status_changed else 'false'}\n")
+            f.write(f"status={current_status}\n")
             
     print("Update complete!")
 
