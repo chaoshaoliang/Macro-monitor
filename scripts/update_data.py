@@ -133,7 +133,17 @@ def main():
     with open('data/history.json', 'w', encoding='utf-8') as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
         
-    print("資料更新完成！")
+   # ... 前面抓取數據與 AI 分析的代碼不變 ...
+
+    # 判斷是否需要發送告警 (非正常狀態就告警)
+    is_alert = "正常" not in new_data["status"]
+    
+    # 將判斷結果寫入 GitHub 的環境變數中，供下一個步驟讀取
+    with open(os.getenv('GITHUB_OUTPUT'), 'a') as f:
+        f.write(f"is_alert={str(is_alert).lower()}\n")
+        f.write(f"status={new_data['status']}\n")
+
+    print(f"資料更新完成！告警狀態: {is_alert}")
 
 if __name__ == "__main__":
     main()
