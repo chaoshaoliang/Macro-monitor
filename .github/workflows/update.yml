@@ -39,7 +39,8 @@ jobs:
     # 發送 Email 通知至 yutaker@gmail.com (僅在非正常狀態時觸發)
      
     - name: Send Email Notification
-      if: steps.macro_run.outputs.is_alert == 'true'
+      if: env.STATUS_CHANGED == 'true'    # <=== 新增這一行在這邊！
+     # if: steps.macro_run.outputs.is_alert == 'true'
       uses: dawidd6/action-send-mail@v3
       with:
         server_address: smtp.gmail.com
