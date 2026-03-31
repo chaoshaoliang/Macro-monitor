@@ -37,6 +37,7 @@ jobs:
         python scripts/update_data.py
 
     # 發送 Email 通知至 yutaker@gmail.com (僅在非正常狀態時觸發)
+     if: env.STATUS_CHANGED == 'true'  
     - name: Send Email Notification
       if: steps.macro_run.outputs.is_alert == 'true'
       uses: dawidd6/action-send-mail@v3
