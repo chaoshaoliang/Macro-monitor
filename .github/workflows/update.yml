@@ -8,8 +8,6 @@ on:
 jobs:
   update-data:
     runs-on: ubuntu-latest
-    
-    # 【新增】強制 GitHub Actions 使用最新的 Node.js 24，徹底消除警告
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       
@@ -21,7 +19,6 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Python
-      # 【更新】將 setup-python 升級到 v5 支援最新架構
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
@@ -32,14 +29,33 @@ jobs:
         pip install requests yfinance google-genai beautifulsoup4
 
     - name: Run Data Update Script
+      id: macro_run
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       run: |
         python scripts/update_data.py
 
+    # 發送 Email 通知至 yutaker@gmail.com (僅在非正常狀態時觸發)
+    - name: Send Email Notification
+      if: steps.macro_run.outputs.is_alert == 'true'
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: yutaker@gmail.com
+        password: ${{ secrets.MAIL_PASSWORD }}
+        subject: 🔴 總經投資風險告警 - 狀態：${{ steps.macro_run.outputs.status }}
+        to: yutaker@gmail.com
+        from: Macro Monitor AI
+        body: |
+          您好，系統偵測到當前總經指標異動。
+          
+          當前狀態：${{ steps.macro_run.outputs.status }}
+          詳細 AI 診斷報告與建議配置，請參閱您的自動化看板網頁。
+
     - name: Commit and push changes
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        commit_message: "🤖 Auto-update macro data and AI analysis (Fix Node.js warnings)"
+        commit_message: "🤖 Auto-update data and check alerts"
         file_pattern: "data/*.json"
