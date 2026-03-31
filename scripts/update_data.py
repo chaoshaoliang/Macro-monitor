@@ -6,28 +6,21 @@ from bs4 import BeautifulSoup
 from google import genai
 from datetime import datetime
 
+# 讀取環境變數 (請確保 GitHub Secrets 有正確設定)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 FRED_API_KEY = os.environ.get("FRED_API_KEY")
-
-# 初始化新版 SDK 的 Client
-client = genai.Client(api_key=GEMINI_API_KEY)
 
 def get_fred_latest(series_id):
     """從 FRED API 獲取最新一筆經濟數據"""
     if not FRED_API_KEY:
-        print("⚠️ 警告：找不到 FRED_API_KEY，請檢查 GitHub Secrets！")
         return 0.0
-        
     url = f"https://api.stlouisfed.org/fred/series/observations?series_id={series_id}&api_key={FRED_API_KEY}&file_type=json&sort_order=desc&limit=1"
     try:
         res = requests.get(url).json()
         if 'observations' in res:
             return float(res['observations'][0]['value'])
-        else:
-            print(f"FRED API 錯誤 ({series_id}): {res}") # 印出真實錯誤原因
-            return 0.0
-    except Exception as e:
-        print(f"連線 FRED {series_id} 失敗: {e}")
+        return 0.0
+    except Exception:
         return 0.0
 
 def get_yfinance_latest(ticker):
@@ -35,29 +28,44 @@ def get_yfinance_latest(ticker):
     try:
         data = yf.Ticker(ticker).history(period="1d")
         return round(data['Close'].iloc[-1], 2)
-    except Exception as e:
-        print(f"YF 抓取失敗 {ticker}: {e}")
+    except Exception:
         return 0.0
 
 def scrape_cape():
     """爬取 multpl.com 的 Shiller PE Ratio"""
     try:
-        # 加上偽裝 Header 避免被 GitHub Actions 的 IP 擋住 (403 Forbidden)
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0'}
         res = requests.get("https://www.multpl.com/shiller-pe", headers=headers, timeout=10)
         soup = BeautifulSoup(res.text, 'html.parser')
         cape_div = soup.find('div', id='bignum')
         if cape_div:
             return float(cape_div.text.strip().replace('\n', ''))
-        else:
-            print("找不到 CAPE 數據區塊。")
-            return 36.6
-    except Exception as e:
-        print(f"CAPE 爬取失敗: {e}")
+        return 36.6
+    except Exception:
         return 36.6
 
+def calculate_market_status(d):
+    """根據數據自動計算當前市場狀態 (與前端邏輯同步)"""
+    if d['hyVal'] >= 5.0 or d['t10y2yVal'] < 0 or d['ismVal'] < 45 or d['igVal'] >= 1.0 or d['vixVal'] >= 30 or d['vxnVal'] >= 32:
+        return "極端風險"
+    elif d['hyVal'] >= 3.5 or d['t10y2yVal'] < 0.2 or d['ismVal'] < 50 or d['igVal'] >= 0.7 or d['aaaOasVal'] >= 0.5 or d['vixVal'] >= 20 or d['vxnVal'] >= 22:
+        return "警戒狀態"
+    elif d['vixVal'] > 0 and d['vixVal'] < 15:
+        return "市場過熱"
+    else:
+        return "正常狀態"
+
 def generate_ai_analysis(data_dict, prev_data=None):
-    """呼叫 Gemini 進行分析 (使用新版 SDK)"""
+    """呼叫 Gemini 進行分析"""
+    if not GEMINI_API_KEY:
+        return "⚠️ Gemini API Key 未設定，無法呼叫 AI 生成報告。請檢查 GitHub Secrets。"
+
+    # 初始化新版 SDK 的 Client
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        return f"⚠️ SDK 初始化失敗: {e}"
+
     prev_str = f"昨日參考數據：10Y-2Y利差 {prev_data.get('t10y2yVal', 0)}%, HY OAS {prev_data.get('hyVal', 0)}%, VIX {prev_data.get('vixVal', 0)}。" if prev_data else ""
     
     prompt = f"""
@@ -65,24 +73,30 @@ def generate_ai_analysis(data_dict, prev_data=None):
     AAA 10Y: {data_dict['igVal']}%, 10Y-2Y: {data_dict['t10y2yVal']}%, AAA OAS: {data_dict['aaaOasVal']}%, HY OAS: {data_dict['hyVal']}%,
     VIX: {data_dict['vixVal']}, CAPE: {data_dict['capeVal']}倍, VXN: {data_dict['vxnVal']}, CPI: {data_dict['cpiVal']}%, 
     美國10Y公債: {data_dict['t10yVal']}%, Brent原油: {data_dict['brentVal']}$。
+    當前系統判定狀態為：{data_dict['status']}
     {prev_str}
     
-    請依要求分大項並使用阿拉伯數字條列景氣解讀與具體理由。
+    請以專業華爾街分析師的角度，依要求分大項並使用阿拉伯數字條列景氣解讀與具體理由。
     特別指示：
     1. 若VIX>30或極端恐慌，採取「左肩交易」策略，請給出具體的「分批資金控管」與「跌幅加碼級距」建議。
     2. 若VIX<15過度樂觀，說明「降槓桿」與獲利了結理由。
-    3. 針對防禦部位，請說明配置「BOXX ETF」的理由。
+    3. 針對防禦部位，請說明配置「BOXX ETF」的理由(約4.5%年化無風險利率、淨值穩定無減損)。
     嚴禁使用 Markdown 符號。文字深黑。使用繁體中文。
     """
+    
     try:
+        # 使用官方最新的穩定版模型
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
         )
-        return response.text.replace('**', '').replace('##', '').replace('*', '')
+        if response.text:
+            return response.text.replace('**', '').replace('##', '').replace('*', '')
+        else:
+            return "⚠️ AI 回傳了空白內容，可能遭到安全機制阻擋。"
     except Exception as e:
         print(f"AI 生成失敗: {e}")
-        return "AI 分析生成失敗，請檢查 API 狀態。"
+        return f"⚠️ 呼叫 Gemini API 失敗，錯誤代碼：\n{str(e)}"
 
 def main():
     print("開始抓取數據...")
@@ -100,27 +114,26 @@ def main():
         "brentVal": get_yfinance_latest("BZ=F")
     }
     
+    # 計算並寫入當前狀態 (重要！讓 Email 能知道真實狀態)
+    new_data["status"] = calculate_market_status(new_data)
+    
     os.makedirs('data', exist_ok=True)
     
-    # 讀取歷史資料 (加入防呆機制)
+    # 讀取歷史資料
     history = []
     if os.path.exists('data/history.json'):
         with open('data/history.json', 'r', encoding='utf-8') as f:
             try:
                 history = json.load(f)
-                # 防呆：如果讀出來是字典 {}，強制轉為清單 []
-                if isinstance(history, dict):
-                    print("修正：history.json 格式錯誤 (dict)，已重置為 list。")
-                    history = []
-            except json.JSONDecodeError:
+                if isinstance(history, dict): history = []
+            except Exception:
                 history = []
                 
     prev_data = history[0] if len(history) > 0 else None
 
-    print("產生 AI 診斷分析...")
+    print(f"當前狀態: {new_data['status']}，產生 AI 診斷分析...")
     new_data["aiContent"] = generate_ai_analysis(new_data, prev_data)
     new_data["timestamp"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-    new_data["status"] = "自動追蹤"
     
     # 寫入最新資料
     with open('data/latest.json', 'w', encoding='utf-8') as f:
@@ -128,22 +141,21 @@ def main():
         
     # 新增到歷史紀錄
     history.insert(0, new_data)
-    history = history[:100] # 保留最新 100 筆
+    history = history[:100] 
     
     with open('data/history.json', 'w', encoding='utf-8') as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
         
-   # ... 前面抓取數據與 AI 分析的代碼不變 ...
-
-    # 判斷是否需要發送告警 (非正常狀態就告警)
+    # --- GitHub Actions 變數輸出 (發送 Email 用) ---
     is_alert = "正常" not in new_data["status"]
-    
-    # 將判斷結果寫入 GitHub 的環境變數中，供下一個步驟讀取
-    with open(os.getenv('GITHUB_OUTPUT'), 'a') as f:
-        f.write(f"is_alert={str(is_alert).lower()}\n")
-        f.write(f"status={new_data['status']}\n")
-
-    print(f"資料更新完成！告警狀態: {is_alert}")
+    github_output = os.getenv('GITHUB_OUTPUT')
+    if github_output:
+        with open(github_output, 'a', encoding='utf-8') as f:
+            f.write(f"is_alert={str(is_alert).lower()}\n")
+            f.write(f"status={new_data['status']}\n")
+            
+    print("資料更新完成！")
 
 if __name__ == "__main__":
     main()
+
