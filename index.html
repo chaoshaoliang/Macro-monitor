@@ -332,10 +332,11 @@
                     if (val < 0.2) return ["走平", "text-black bg-yellow-200 border-yellow-400"];
                     return ["擴張", "text-black bg-green-200 border-green-400"];
                 }
-                if (type === 'ISM') {
+                if (type === 'ISM') 
+                    {if (val <= 0 || val == null || val === '-') return ["無數據", "text-slate-500 bg-slate-100 border-slate-300"];
                     if (val < 45) return ["衰退危機", "text-black bg-red-400 border-red-500"];
                     if (val < 50) return ["萎縮", "text-black bg-yellow-200 border-yellow-400"];
-                    return ["擴張", "text-black bg-green-200 border-green-400"];
+                                  return ["擴張", "text-black bg-green-200 border-green-400"];
                 }
                 if (val > thresholds[1]) return ["風險", "text-black bg-red-400 border-red-500"];
                 if (val > thresholds[0]) return ["警戒", "text-black bg-yellow-200 border-yellow-400"];
