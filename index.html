@@ -426,12 +426,13 @@
                 else if (s === "警戒狀態") statusColorCls = "text-yellow-700 bg-yellow-100 border-yellow-300";
                 else if (s === "市場過熱") statusColorCls = "text-blue-700 bg-blue-100 border-blue-300";
                 else if (s === "正常狀態") statusColorCls = "text-green-700 bg-green-100 border-green-300";
-                
+            
                 return `
                     <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                       <td class="py-1 px-1 border-r border-slate-100">${log.timestamp.split(' ')[0]}</td>
-                       <td class="py-1 px-1 border-r border-slate-100 leading-tight">${log.timestamp.split(' ')[0]}<br>
-                        <span class="text-[9px] text-slate-400">${log.timestamp.split(' ')[1] || ''}</span>
+                        <td class="py-1 px-1 border-r border-slate-100 leading-tight">
+                            ${log.timestamp.split(' ')[0]}<br>
+                            <span class="text-[9px] text-slate-400">${log.timestamp.split(' ')[1] || ''}</span>
+                        </td>
                         <td class="py-1 px-1 border-r border-slate-100 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-black border ${statusColorCls}">${s}</span></td>
                         <td class="py-1 px-1 border-r border-slate-100">${log.igVal}${prev ? diffStr(log.igVal, prev.igVal) : ''}</td>
                         <td class="py-1 px-1 border-r border-slate-100">${log.t10y2yVal}${prev ? diffStr(log.t10y2yVal, prev.t10y2yVal) : ''}</td>
@@ -445,6 +446,7 @@
                         <td class="py-1 px-1 border-r border-slate-100">${log.t10yVal || '-'}${prev && log.t10yVal ? diffStr(log.t10yVal, prev.t10yVal) : ''}</td>
                         <td class="py-1 px-1 border-r border-slate-100">${log.brentVal || '-'}${prev && log.brentVal ? diffStr(log.brentVal, prev.brentVal) : ''}</td>
                     </tr>
+                
                 `;
             }).join('');
         }
