@@ -372,12 +372,21 @@
             let overallStatusText = "";
             let overallStatusClass = "px-2 py-0.5 rounded text-[11px] font-black border ";
 
-            if (hy >= 5.0 || yc < 0 || ism < 45 || ig >= 1.0 || vix >= 30 || vxn >= 32) {
+           # if (hy >= 5.0 || yc < 0 || ism < 45 || ig >= 1.0 || vix >= 30 || vxn >= 32) {
+           #     w = [["00662", "15%"], ["0050", "15%"], ["QQQI", "15%"], ["00670L", "5%"], ["00631L", "5%"], ["BOXX (類現金)", "25%"], ["左肩建倉現金", "20%"]];
+           #    overallStatusText = "極端風險 (左肩建倉)";
+           #    overallStatusClass += "bg-red-200 text-red-900 border-red-400";
+           # } else if (hy >= 3.5 || yc < 0.2 || ism < 50 || ig >= 0.7 || ao >= 0.5 || vix >= 20 || vxn >= 22) {
+           
+            const safeIsm = (ism > 0) ? ism : 50;
+            if (hy >= 5.0 || yc < 0 || safeIsm < 45 || ig >= 1.0 || vix >= 30 || vxn >= 32) {
                 w = [["00662", "15%"], ["0050", "15%"], ["QQQI", "15%"], ["00670L", "5%"], ["00631L", "5%"], ["BOXX (類現金)", "25%"], ["左肩建倉現金", "20%"]];
                 overallStatusText = "極端風險 (左肩建倉)";
                 overallStatusClass += "bg-red-200 text-red-900 border-red-400";
-            } else if (hy >= 3.5 || yc < 0.2 || ism < 50 || ig >= 0.7 || ao >= 0.5 || vix >= 20 || vxn >= 22) {
-                w = [["00662", "30%"], ["0050", "25%"], ["QQQI", "20%"], ["00670L", "0%"], ["00631L", "0%"], ["BOXX (類現金)", "15%"], ["保留現金", "10%"]];
+            } else if (hy >= 3.5 || yc < 0.2 || safeIsm < 50 || ig >= 0.7 || ao >= 0.5 || vix >= 20 || vxn >= 22) {
+                // ... (略，維持您原本的配置即可，只要確認 ism 被改成 safeIsm 就好){   
+               
+               w = [["00662", "30%"], ["0050", "25%"], ["QQQI", "20%"], ["00670L", "0%"], ["00631L", "0%"], ["BOXX (類現金)", "15%"], ["保留現金", "10%"]];
                 overallStatusText = "警戒狀態 (景氣收縮)";
                 overallStatusClass += "bg-yellow-200 text-yellow-900 border-yellow-400";
             } else if (vix < 15) {
