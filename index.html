@@ -430,8 +430,7 @@
                 return `
                     <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                        <td class="py-1 px-1 border-r border-slate-100">${log.timestamp.split(' ')[0]}</td>
-                       <td class="py-1 px-1 border-r border-slate-100 leading-tight">
-                        ${log.timestamp.split(' ')[0]}<br>
+                       <td class="py-1 px-1 border-r border-slate-100 leading-tight">${log.timestamp.split(' ')[0]}<br>
                         <span class="text-[9px] text-slate-400">${log.timestamp.split(' ')[1] || ''}</span>
                         <td class="py-1 px-1 border-r border-slate-100 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-black border ${statusColorCls}">${s}</span></td>
                         <td class="py-1 px-1 border-r border-slate-100">${log.igVal}${prev ? diffStr(log.igVal, prev.igVal) : ''}</td>
