@@ -1,1 +1,6 @@
-
+requests
+yfinance
+beautifulsoup4
+google-genai
+gspread
+oauth2client
