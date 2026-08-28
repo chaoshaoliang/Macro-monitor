@@ -1,16 +1,16 @@
 {
-  "igVal": 1.19,
+  "igVal": 1.18,
   "t10y2yVal": 0.47,
   "aaaOasVal": 0.42,
-  "hyVal": 2.7,
+  "hyVal": 2.67,
   "ismVal": 0.0,
-  "vixVal": 15.21,
-  "vxnVal": 21.42,
+  "vixVal": 14.51,
+  "vxnVal": 20.24,
   "capeVal": 36.6,
   "cpiVal": 332.813,
-  "t10yVal": 4.64,
-  "brentVal": 86.39,
+  "t10yVal": 4.66,
+  "brentVal": 88.34,
   "status": "極端風險",
-  "aiContent": "AI 分析生成失敗：503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}",
-  "timestamp": "2026/08/27 03:23:51"
+  "aiContent": "AI 分析生成失敗：'NoneType' object has no attribute 'replace'",
+  "timestamp": "2026/08/28 06:13:55"
 }
