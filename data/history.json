@@ -1,6 +1,22 @@
 [
   {
     "igVal": 1.13,
+    "t10y2yVal": 0.25,
+    "aaaOasVal": 0.49,
+    "hyVal": 3.77,
+    "ismVal": 0.0,
+    "vixVal": 23.81,
+    "vxnVal": 33.34,
+    "capeVal": 36.6,
+    "cpiVal": 337.476,
+    "t10yVal": 4.85,
+    "brentVal": 90.84,
+    "status": "極端風險",
+    "aiContent": "AI 分析生成失敗：503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}",
+    "timestamp": "2026/11/28 04:01:06"
+  },
+  {
+    "igVal": 1.13,
     "t10y2yVal": 0.24,
     "aaaOasVal": 0.49,
     "hyVal": 3.72,
